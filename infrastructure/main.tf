@@ -89,7 +89,8 @@ resource "aws_lambda_function" "ingestion_lambda" {
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.10"
   timeout       = 60
-  memory_size   = 256
+  memory_size   = 512 # Increased memory for pandas processing
+  layers        = ["arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python310:24"]
 
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
@@ -99,8 +100,6 @@ resource "aws_lambda_function" "ingestion_lambda" {
       CURATED_BUCKET = aws_s3_bucket.curated_zone.bucket
     }
   }
-  
-  # layers = ["arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python310:8"] # Example for us-east-1
 }
 
 # --- S3 Trigger ---

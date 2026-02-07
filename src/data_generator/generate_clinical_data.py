@@ -33,14 +33,15 @@ def generate_patient_visit():
     print(f"Generated {file_name}")
 
     # Upload to S3 (Uncomment when Infra is ready)
-    # bucket_name = "vitalstream-landing-zone" 
-    # s3 = boto3.client('s3')
-    # try:
-    #     s3.upload_file(file_name, bucket_name, file_name)
-    #     print(f"Uploaded {file_name} to {bucket_name}")
-    #     os.remove(file_name) # Clean up local file
-    # except Exception as e:
-    #     print(f"Error uploading to S3: {e}")
+    # Upload to S3 (Uncomment when Infra is ready)
+    bucket_name = "vitalstream-landing-zone-445cb2f1" 
+    s3 = boto3.client('s3')
+    try:
+        s3.upload_file(file_name, bucket_name, file_name)
+        print(f"Uploaded {file_name} to {bucket_name}")
+        os.remove(file_name) # Clean up local file
+    except Exception as e:
+        print(f"Error uploading to S3: {e}")
 
 if __name__ == "__main__":
     generate_patient_visit()
