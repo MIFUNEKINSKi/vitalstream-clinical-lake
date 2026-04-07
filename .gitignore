@@ -6,12 +6,17 @@ __pycache__/
 env/
 venv/
 *.so
+*.egg-info/
+dist/
+build/
 
 # Terraform
 .terraform/
 .terraform.lock.hcl
 *.tfstate
 *.tfstate.backup
+tfplan
+*.zip
 
 # IDE
 .vscode/
@@ -19,3 +24,6 @@ venv/
 
 # OS
 .DS_Store
+
+# Output
+output/

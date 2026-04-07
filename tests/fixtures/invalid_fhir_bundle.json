@@ -1,0 +1,30 @@
+{
+  "resourceType": "Bundle",
+  "id": "invalid-bundle-001",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:bad-patient",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "bad-patient"
+      },
+      "request": {
+        "method": "POST",
+        "url": "Patient"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:bad-obs",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "bad-obs",
+        "status": "final"
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    }
+  ]
+}

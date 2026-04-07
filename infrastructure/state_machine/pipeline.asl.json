@@ -1,0 +1,67 @@
+{
+  "Comment": "VitalStream FHIR-to-OMOP pipeline: validate, transform, quality check, catalog",
+  "StartAt": "TransformFHIRtoOMOP",
+  "States": {
+    "TransformFHIRtoOMOP": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "${etl_job_name}",
+        "Arguments": {
+          "--source_path.$": "States.Format('s3://{}/{}', $.source_bucket, $.source_key)",
+          "--target_path": "${target_path}"
+        }
+      },
+      "ResultPath": "$.etl_result",
+      "Next": "DataQualityCheck",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "PipelineFailed",
+          "ResultPath": "$.error"
+        }
+      ]
+    },
+    "DataQualityCheck": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": {
+        "JobName": "${dq_job_name}",
+        "Arguments": {
+          "--target_path": "${target_path}",
+          "--dq_output_path": "${dq_output_path}"
+        }
+      },
+      "ResultPath": "$.dq_result",
+      "Next": "UpdateCatalog",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "PipelineFailed",
+          "ResultPath": "$.error"
+        }
+      ]
+    },
+    "UpdateCatalog": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:glue:startCrawler",
+      "Parameters": {
+        "Name": "${crawler_name}"
+      },
+      "ResultPath": "$.crawler_result",
+      "End": true,
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "PipelineFailed",
+          "ResultPath": "$.error"
+        }
+      ]
+    },
+    "PipelineFailed": {
+      "Type": "Fail",
+      "Error": "PipelineExecutionFailed",
+      "Cause": "One or more pipeline steps failed. Check CloudWatch logs for details."
+    }
+  }
+}
