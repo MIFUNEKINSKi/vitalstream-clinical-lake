@@ -27,3 +27,10 @@ tfplan
 
 # Output
 output/
+
+# dbt
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+*.duckdb
+dbt/.user.yml

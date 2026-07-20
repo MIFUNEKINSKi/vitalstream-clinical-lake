@@ -1,0 +1,17 @@
+version: 2
+
+seeds:
+  - name: vital_sign_reference
+    description: >
+      Vital-sign reference data generated from
+      src/data_generator/vocabulary.py VITAL_SIGNS by
+      scripts/generate_dbt_seed.py — do not edit by hand. Single source of
+      truth for LOINC/OMOP concept mappings, clinically plausible ranges
+      (data-quality bounds), and alert thresholds (dashboard flags).
+    columns:
+      - name: loinc_code
+        data_tests: [not_null, unique]
+      - name: omop_concept_id
+        data_tests: [not_null, unique]
+      - name: vital_sign
+        data_tests: [not_null]

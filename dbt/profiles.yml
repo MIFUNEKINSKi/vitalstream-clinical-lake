@@ -1,0 +1,20 @@
+# Two targets, one project:
+#   dev    - dbt-duckdb over the committed sample_outputs/ CSVs; runs free,
+#            locally and in CI, with no AWS credentials.
+#   athena - dbt-athena-community against the Glue-cataloged curated zone
+#            written by the deployed pipeline (requires AWS credentials and
+#            `pip install dbt-athena-community`).
+vitalstream:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: target/vitalstream.duckdb
+      threads: 4
+    athena:
+      type: athena
+      region_name: "{{ env_var('AWS_REGION', 'us-east-1') }}"
+      s3_staging_dir: "{{ env_var('DBT_ATHENA_S3_STAGING_DIR') }}"
+      database: awsdatacatalog
+      schema: "{{ env_var('DBT_ATHENA_SCHEMA', 'vitalstream_db_analytics') }}"
+      threads: 4

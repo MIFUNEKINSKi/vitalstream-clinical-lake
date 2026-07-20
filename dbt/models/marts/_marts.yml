@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: dim_vital_sign
+    description: >
+      Vital-sign dimension with LOINC/OMOP mappings, clinically plausible
+      ranges (DQ bounds), and alert thresholds (dashboard flags). Generated
+      from vocabulary.py via the vital_sign_reference seed.
+    columns:
+      - name: measurement_concept_id
+        data_tests: [not_null, unique]
+      - name: loinc_code
+        data_tests: [not_null, unique]
+
+  - name: patient_vital_summary
+    description: Patient-level vital sign summary for clinical review.
+    columns:
+      - name: person_id
+        data_tests: [not_null]
+      - name: measurement_count
+        data_tests: [not_null]
+
+  - name: abnormal_vitals_by_encounter
+    description: >
+      One row per measurement outside its vital sign's alert thresholds,
+      joined to patient and encounter context.
+    columns:
+      - name: abnormal_flag
+        data_tests: [not_null]
+      - name: value_as_number
+        data_tests: [not_null]
+
+  - name: daily_measurement_counts
+    description: Daily measurement volume by OMOP concept and LOINC code.
+    columns:
+      - name: measurement_date
+        data_tests: [not_null]
+      - name: measurement_count
+        data_tests: [not_null]

@@ -1,0 +1,72 @@
+version: 2
+
+# These tests mirror the pipeline's PySpark DQ checks
+# (src/glue_jobs/data_quality.py):
+#   null checks               -> not_null on the same critical columns
+#   referential integrity     -> relationships tests on the same foreign keys
+#   plausible-range checks    -> tests/assert_measurements_within_plausible_range.sql
+#                                (driven by the vital_sign_reference seed,
+#                                generated from vocabulary.py)
+
+models:
+  - name: stg_omop__person
+    description: Typed staging view over the curated OMOP person table.
+    columns:
+      - name: person_id
+        description: Surrogate key for the patient.
+        data_tests: [not_null, unique]
+      - name: gender_concept_id
+        description: OMOP gender concept (8507 male, 8532 female, 0 unknown).
+        data_tests: [not_null]
+      - name: year_of_birth
+        data_tests: [not_null]
+      - name: mrn
+        description: Source medical record number (person_source_value).
+
+  - name: stg_omop__visit_occurrence
+    description: Typed staging view over the curated OMOP visit_occurrence table.
+    columns:
+      - name: visit_occurrence_id
+        description: Surrogate key for the encounter.
+        data_tests: [not_null, unique]
+      - name: person_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_omop__person')
+                field: person_id
+      - name: visit_start_date
+        data_tests: [not_null]
+
+  - name: stg_omop__measurement
+    description: Typed staging view over the curated OMOP measurement table.
+    columns:
+      - name: measurement_id
+        description: Surrogate key for the vital-sign measurement.
+        data_tests: [not_null, unique]
+      - name: person_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_omop__person')
+                field: person_id
+      - name: measurement_date
+        data_tests: [not_null]
+      - name: value_as_number
+        data_tests: [not_null]
+      - name: visit_occurrence_id
+        description: Nullable FK — measurements may lack an encounter link.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_omop__visit_occurrence')
+                field: visit_occurrence_id
+      - name: loinc_code
+        description: Source LOINC code (measurement_source_value).
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('vital_sign_reference')
+                field: loinc_code

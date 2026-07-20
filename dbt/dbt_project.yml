@@ -1,0 +1,20 @@
+name: "vitalstream"
+version: "1.0.0"
+config-version: 2
+
+profile: "vitalstream"
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  vitalstream:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table

@@ -1,0 +1,7 @@
+loinc_code,omop_concept_id,vital_sign,abnormal_flag,unit_ucum,plausible_min,plausible_max,alert_min,alert_max
+8867-4,3027018,Heart Rate,abnormal_heart_rate,/min,20,300,50,120
+8480-6,3004249,Systolic Blood Pressure,abnormal_systolic_blood_pressure,mm[Hg],50,300,90,140
+8462-4,3012888,Diastolic Blood Pressure,abnormal_diastolic_blood_pressure,mm[Hg],20,200,60,90
+8310-5,3020891,Body Temperature,abnormal_body_temperature,Cel,30,45,36,38
+9279-1,3024171,Respiratory Rate,abnormal_respiratory_rate,/min,4,60,12,24
+2708-6,3016502,Oxygen Saturation,abnormal_oxygen_saturation,%,50,100,95,100
