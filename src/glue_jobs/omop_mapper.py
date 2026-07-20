@@ -14,10 +14,8 @@ from pyspark.sql.functions import (
     monotonically_increasing_id,
     regexp_replace,
     split,
-    substring,
     to_date,
     to_timestamp,
-    when,
 )
 from pyspark.sql.types import FloatType, IntegerType, LongType
 

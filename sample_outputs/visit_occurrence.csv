@@ -1,0 +1,4 @@
+visit_occurrence_id,person_id,visit_concept_id,visit_start_date,visit_start_datetime,visit_end_date,visit_end_datetime,visit_type_concept_id,visit_source_value
+0,0,9202,2025-12-31,2025-12-31T01:45:50,2025-12-31,2025-12-31T07:45:50,32817,AMB
+1,1,9202,2025-08-16,2025-08-16T04:17:39,2025-08-16,2025-08-16T18:17:39,32817,AMB
+2,2,9201,2025-08-12,2025-08-12T09:09:39,2025-08-13,2025-08-13T01:09:39,32817,IMP

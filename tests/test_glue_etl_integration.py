@@ -1,5 +1,6 @@
 """End-to-end integration test: FHIR Bundle → OMOP CDM tables."""
 
+from src.glue_jobs.data_quality import run_all_checks
 from src.glue_jobs.fhir_parser import (
     extract_encounters,
     extract_observations,
@@ -10,7 +11,6 @@ from src.glue_jobs.omop_mapper import (
     map_to_person,
     map_to_visit_occurrence,
 )
-from src.glue_jobs.data_quality import run_all_checks
 
 
 def test_full_pipeline_fhir_to_omop(spark, sample_bundle_df):

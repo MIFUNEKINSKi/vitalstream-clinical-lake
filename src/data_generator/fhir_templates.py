@@ -6,9 +6,10 @@ No side effects, no I/O — designed for easy testing and composition.
 
 from __future__ import annotations
 
-import uuid
 import random
+import uuid
 from datetime import datetime, timedelta
+from typing import Optional
 
 from faker import Faker
 

@@ -1,5 +1,8 @@
 """Tests for data quality checks on OMOP tables."""
 
+from datetime import date
+
+from src.data_generator.vocabulary import LOINC_TO_OMOP
 from src.glue_jobs.data_quality import (
     run_all_checks,
     run_null_checks,
@@ -16,6 +19,8 @@ from src.glue_jobs.omop_mapper import (
     map_to_person,
     map_to_visit_occurrence,
 )
+from src.shared.constants import MEASUREMENT_TYPE_CONCEPT_ID
+from src.shared.omop_schema import MEASUREMENT_SCHEMA
 
 
 def _build_omop_tables(spark, sample_bundle_df):
@@ -66,18 +71,14 @@ def test_run_all_checks_overall_pass(spark, sample_bundle_df):
 
 def test_range_check_detects_out_of_range(spark):
     """Inject an out-of-range heart rate and verify DQ catches it."""
+    heart_rate_concept_id = LOINC_TO_OMOP["8867-4"]
     data = [
-        (1, 1, 3027018, "2025-01-01", None, 32817, 999.0, None, None, "8867-4", None),
+        (1, 1, heart_rate_concept_id, date(2025, 1, 1), None,
+         MEASUREMENT_TYPE_CONCEPT_ID, 999.0, None, None, "8867-4", None),
     ]
-    columns = [
-        "measurement_id", "person_id", "measurement_concept_id",
-        "measurement_date", "measurement_datetime", "measurement_type_concept_id",
-        "value_as_number", "unit_concept_id", "unit_source_value",
-        "measurement_source_value", "visit_occurrence_id",
-    ]
-    bad_df = spark.createDataFrame(data, columns)
+    bad_df = spark.createDataFrame(data, MEASUREMENT_SCHEMA)
     checks = run_range_checks(bad_df)
 
-    hr_check = next(c for c in checks if c["concept_id"] == 3027018)
+    hr_check = next(c for c in checks if c["concept_id"] == heart_rate_concept_id)
     assert not hr_check["passed"]
     assert hr_check["violations"] == 1

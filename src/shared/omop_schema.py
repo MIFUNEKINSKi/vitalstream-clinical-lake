@@ -5,14 +5,14 @@ for each OMOP table produced by the VitalStream pipeline.
 """
 
 from pyspark.sql.types import (
+    DateType,
+    FloatType,
     IntegerType,
     LongType,
-    FloatType,
     StringType,
-    DateType,
-    TimestampType,
     StructField,
     StructType,
+    TimestampType,
 )
 
 PERSON_SCHEMA = StructType([

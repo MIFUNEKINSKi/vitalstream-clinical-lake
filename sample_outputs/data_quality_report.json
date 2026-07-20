@@ -1,0 +1,161 @@
+{
+  "run_timestamp": "2026-07-10T00:35:55.227955Z",
+  "overall_result": "PASS",
+  "total_checks": 19,
+  "passed_checks": 19,
+  "failed_checks": 0,
+  "checks": [
+    {
+      "check_type": "null_check",
+      "table": "person",
+      "column": "person_id",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "null_check",
+      "table": "person",
+      "column": "gender_concept_id",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "null_check",
+      "table": "person",
+      "column": "year_of_birth",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "null_check",
+      "table": "measurement",
+      "column": "measurement_id",
+      "total_rows": 14,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "null_check",
+      "table": "measurement",
+      "column": "person_id",
+      "total_rows": 14,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "null_check",
+      "table": "measurement",
+      "column": "measurement_date",
+      "total_rows": 14,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "null_check",
+      "table": "measurement",
+      "column": "value_as_number",
+      "total_rows": 14,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "null_check",
+      "table": "visit_occurrence",
+      "column": "visit_occurrence_id",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "null_check",
+      "table": "visit_occurrence",
+      "column": "person_id",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "null_check",
+      "table": "visit_occurrence",
+      "column": "visit_start_date",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "range_check",
+      "measurement": "Heart Rate",
+      "concept_id": 3027018,
+      "range": "[20, 300]",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "range_check",
+      "measurement": "Systolic Blood Pressure",
+      "concept_id": 3004249,
+      "range": "[50, 300]",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "range_check",
+      "measurement": "Diastolic Blood Pressure",
+      "concept_id": 3012888,
+      "range": "[20, 200]",
+      "total_rows": 2,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "range_check",
+      "measurement": "Body Temperature",
+      "concept_id": 3020891,
+      "range": "[30, 45]",
+      "total_rows": 2,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "range_check",
+      "measurement": "Respiratory Rate",
+      "concept_id": 3024171,
+      "range": "[4, 60]",
+      "total_rows": 2,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "range_check",
+      "measurement": "Oxygen Saturation",
+      "concept_id": 3016502,
+      "range": "[50, 100]",
+      "total_rows": 2,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "referential_integrity",
+      "relationship": "measurement.person_id → person.person_id",
+      "orphan_count": 0,
+      "passed": true
+    },
+    {
+      "check_type": "referential_integrity",
+      "relationship": "visit_occurrence.person_id → person.person_id",
+      "orphan_count": 0,
+      "passed": true
+    },
+    {
+      "check_type": "referential_integrity",
+      "relationship": "measurement.visit_occurrence_id → visit_occurrence.visit_occurrence_id",
+      "orphan_count": 0,
+      "passed": true
+    }
+  ]
+}

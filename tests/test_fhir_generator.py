@@ -1,10 +1,10 @@
 """Tests for FHIR R4 data generator."""
 
 from src.data_generator.fhir_templates import (
-    create_patient,
+    create_bundle,
     create_encounter,
     create_observation,
-    create_bundle,
+    create_patient,
     generate_clinical_bundle,
 )
 from src.data_generator.vocabulary import VITAL_SIGNS

@@ -1,0 +1,4 @@
+person_id,gender_concept_id,year_of_birth,month_of_birth,day_of_birth,birth_datetime,race_concept_id,ethnicity_concept_id,person_source_value,gender_source_value
+0,8507,1939,7,29,1939-07-29T00:00:00,0,0,MRN-12575562,male
+1,8532,1957,3,31,1957-03-31T00:00:00,0,0,MRN-93702683,female
+2,8507,1950,9,2,1950-09-02T00:00:00,0,0,MRN-3356886,male

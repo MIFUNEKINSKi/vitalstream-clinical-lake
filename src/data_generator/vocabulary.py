@@ -9,7 +9,14 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class VitalSignDef:
-    """Definition of a vital sign with FHIR and OMOP mappings."""
+    """Definition of a vital sign with FHIR and OMOP mappings.
+
+    min/max_realistic bound the synthetic generator's output;
+    min/max_plausible bound what the DQ range checks accept as
+    clinically possible (anything outside is a data error);
+    min/max_alert bound the normal range used by dashboard
+    abnormal-vital flags (outside = clinically notable, not a data error).
+    """
 
     name: str
     loinc_code: str
@@ -17,6 +24,10 @@ class VitalSignDef:
     unit_ucum: str
     min_realistic: float
     max_realistic: float
+    min_plausible: float
+    max_plausible: float
+    min_alert: float
+    max_alert: float
 
 
 # Six vital signs with LOINC → OMOP concept_id mappings
@@ -28,6 +39,10 @@ VITAL_SIGNS = [
         unit_ucum="/min",
         min_realistic=60,
         max_realistic=100,
+        min_plausible=20,
+        max_plausible=300,
+        min_alert=50,
+        max_alert=120,
     ),
     VitalSignDef(
         name="Systolic Blood Pressure",
@@ -36,6 +51,10 @@ VITAL_SIGNS = [
         unit_ucum="mm[Hg]",
         min_realistic=90,
         max_realistic=180,
+        min_plausible=50,
+        max_plausible=300,
+        min_alert=90,
+        max_alert=140,
     ),
     VitalSignDef(
         name="Diastolic Blood Pressure",
@@ -44,6 +63,10 @@ VITAL_SIGNS = [
         unit_ucum="mm[Hg]",
         min_realistic=60,
         max_realistic=120,
+        min_plausible=20,
+        max_plausible=200,
+        min_alert=60,
+        max_alert=90,
     ),
     VitalSignDef(
         name="Body Temperature",
@@ -52,6 +75,10 @@ VITAL_SIGNS = [
         unit_ucum="Cel",
         min_realistic=36.1,
         max_realistic=38.5,
+        min_plausible=30,
+        max_plausible=45,
+        min_alert=36,
+        max_alert=38,
     ),
     VitalSignDef(
         name="Respiratory Rate",
@@ -60,6 +87,10 @@ VITAL_SIGNS = [
         unit_ucum="/min",
         min_realistic=12,
         max_realistic=22,
+        min_plausible=4,
+        max_plausible=60,
+        min_alert=12,
+        max_alert=24,
     ),
     VitalSignDef(
         name="Oxygen Saturation",
@@ -68,6 +99,10 @@ VITAL_SIGNS = [
         unit_ucum="%",
         min_realistic=92,
         max_realistic=100,
+        min_plausible=50,
+        max_plausible=100,
+        min_alert=95,
+        max_alert=100,
     ),
 ]
 

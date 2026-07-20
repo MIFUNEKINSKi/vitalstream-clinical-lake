@@ -41,3 +41,36 @@ resource "aws_s3_object" "dq_script" {
   source = "${path.module}/../src/glue_jobs/data_quality.py"
   etag   = filemd5("${path.module}/../src/glue_jobs/data_quality.py")
 }
+
+# Package the src/ modules the job scripts import (both scripts import from
+# src.*, which is not on the path of a bare Glue script) and ship the zip
+# via --extra-py-files.
+data "archive_file" "src_package" {
+  type        = "zip"
+  output_path = "${path.module}/build/vitalstream_src.zip"
+
+  dynamic "source" {
+    for_each = [
+      "__init__.py",
+      "data_generator/__init__.py",
+      "data_generator/vocabulary.py",
+      "glue_jobs/__init__.py",
+      "glue_jobs/fhir_parser.py",
+      "glue_jobs/omop_mapper.py",
+      "shared/__init__.py",
+      "shared/constants.py",
+      "shared/omop_schema.py",
+    ]
+    content {
+      content  = file("${path.module}/../src/${source.value}")
+      filename = "src/${source.value}"
+    }
+  }
+}
+
+resource "aws_s3_object" "src_package" {
+  bucket = aws_s3_bucket.glue_scripts.id
+  key    = "scripts/vitalstream_src.zip"
+  source = data.archive_file.src_package.output_path
+  etag   = data.archive_file.src_package.output_md5
+}

@@ -2,9 +2,17 @@
 
 import json
 import os
+import sys
 
 import pytest
-from pyspark.sql import SparkSession
+
+# Pin Spark workers to the interpreter running the tests, overriding any
+# PYSPARK_PYTHON inherited from the shell — a stale global value would make
+# workers fail to connect back (always fatal on Windows).
+os.environ["PYSPARK_PYTHON"] = sys.executable
+os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
+
+from pyspark.sql import SparkSession  # noqa: E402
 
 
 @pytest.fixture(scope="session")
