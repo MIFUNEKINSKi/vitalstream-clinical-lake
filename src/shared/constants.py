@@ -21,3 +21,17 @@ FHIR_PATIENT = "Patient"
 FHIR_ENCOUNTER = "Encounter"
 FHIR_OBSERVATION = "Observation"
 FHIR_BUNDLE = "Bundle"
+
+# PCORnet table names
+DEMOGRAPHIC_TABLE = "demographic"
+ENCOUNTER_TABLE = "encounter"
+VITAL_TABLE = "vital"
+OBS_CLIN_TABLE = "obs_clin"
+
+# PCORnet fixed codes
+PCORNET_NO_INFORMATION = "NI"
+PCORNET_OTHER = "OT"
+OBSCLIN_TYPE_LOINC = "LC"
+VITAL_SOURCE_HEALTHCARE = "HC"  # Healthcare delivery setting
+OBSCLIN_SOURCE_HEALTHCARE = "HC"
+RESULT_MODIFIER_EQUAL = "EQ"
