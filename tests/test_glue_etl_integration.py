@@ -1,4 +1,4 @@
-"""End-to-end integration test: FHIR Bundle → OMOP CDM tables."""
+"""End-to-end integration tests: FHIR Bundle → OMOP CDM and PCORnet CDM tables."""
 
 from src.glue_jobs.data_quality import run_all_checks
 from src.glue_jobs.fhir_parser import (
@@ -6,11 +6,13 @@ from src.glue_jobs.fhir_parser import (
     extract_observations,
     extract_patients,
 )
+from src.glue_jobs.fhir_to_omop_etl import build_cdm_tables
 from src.glue_jobs.omop_mapper import (
     map_to_measurement,
     map_to_person,
     map_to_visit_occurrence,
 )
+from src.glue_jobs.pcornet_data_quality import run_all_pcornet_checks
 
 
 def test_full_pipeline_fhir_to_omop(spark, sample_bundle_df):
@@ -60,3 +62,37 @@ def test_full_pipeline_fhir_to_omop(spark, sample_bundle_df):
     report = run_all_checks(person, visits, measurements)
     assert report["overall_result"] == "PASS"
     assert report["failed_checks"] == 0
+
+
+def test_one_etl_run_builds_omop_and_pcornet(spark, sample_bundle_df):
+    """One build_cdm_tables call (what the Glue job runs) yields both models, and they reconcile."""
+    tables = build_cdm_tables(spark, sample_bundle_df)
+    omop, pcornet = tables["omop"], tables["pcornet"]
+
+    assert omop["person"].count() == 1
+    assert omop["visit_occurrence"].count() == 1
+    assert omop["measurement"].count() == 3
+
+    assert pcornet["demographic"].count() == 1
+    assert pcornet["encounter"].count() == 1
+    assert pcornet["vital"].count() == 1  # systolic + diastolic on one row
+    assert pcornet["obs_clin"].count() == 1  # heart rate
+
+    # Same patient and encounter identity in both models
+    assert pcornet["demographic"].first().PATID == omop["person"].first().patient_fhir_id
+    assert pcornet["encounter"].first().ENCOUNTERID == omop["visit_occurrence"].first().encounter_fhir_id
+
+    omop_tables = (omop["person"], omop["visit_occurrence"], omop["measurement"])
+    assert run_all_checks(*omop_tables)["overall_result"] == "PASS"
+
+    report = run_all_pcornet_checks(
+        pcornet["demographic"], pcornet["encounter"], pcornet["vital"], pcornet["obs_clin"], omop=omop_tables,
+    )
+    assert report["overall_result"] == "PASS", [c for c in report["checks"] if not c["passed"]]
+
+
+def test_etl_can_skip_pcornet(spark, sample_bundle_df):
+    tables = build_cdm_tables(spark, sample_bundle_df, include_pcornet=False)
+
+    assert "pcornet" not in tables
+    assert set(tables["omop"]) == {"person", "visit_occurrence", "measurement"}

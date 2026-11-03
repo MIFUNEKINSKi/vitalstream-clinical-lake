@@ -5,8 +5,11 @@ Usage:
     # or: python scripts/regenerate_sample_outputs.py
 
 Produces person.csv, visit_occurrence.csv, measurement.csv and
-data_quality_report.json exactly as the generator -> parser -> mapper -> DQ
-chain emits them, so the samples cannot drift from the code by hand-editing.
+data_quality_report.json (OMOP), plus pcornet/{demographic,encounter,vital,
+obs_clin}.csv and pcornet/pcornet_data_quality_report.json, exactly as the
+generator -> parser -> mapper -> DQ chain emits them, so the samples cannot
+drift from the code by hand-editing. Both models come from one
+build_cdm_tables call, the same function the Glue ETL job runs.
 """
 
 import csv
@@ -28,16 +31,8 @@ from pyspark.sql import functions as F  # noqa: E402
 
 from src.data_generator.fhir_templates import generate_clinical_bundle  # noqa: E402
 from src.glue_jobs.data_quality import run_all_checks  # noqa: E402
-from src.glue_jobs.fhir_parser import (  # noqa: E402
-    extract_encounters,
-    extract_observations,
-    extract_patients,
-)
-from src.glue_jobs.omop_mapper import (  # noqa: E402
-    map_to_measurement,
-    map_to_person,
-    map_to_visit_occurrence,
-)
+from src.glue_jobs.fhir_to_omop_etl import build_cdm_tables  # noqa: E402
+from src.glue_jobs.pcornet_data_quality import run_all_pcornet_checks  # noqa: E402
 
 random.seed(42)
 Faker.seed(42)
@@ -94,14 +89,13 @@ def main():
         # paths: directory listing needs winutils on Windows, single files don't.
         bundle_df = spark.read.option("multiline", "true").json(bundle_paths)
 
-        person = map_to_person(spark, extract_patients(bundle_df))
-        visits = map_to_visit_occurrence(spark, extract_encounters(bundle_df), person)
-        measurements = map_to_measurement(spark, extract_observations(bundle_df), person, visits)
+        tables = build_cdm_tables(spark, bundle_df)
+        omop, pcornet = tables["omop"], tables["pcornet"]
 
         # Same projections the deployed ETL job writes to the curated zone
-        person_out = person.drop("patient_fhir_id").cache()
-        visits_out = visits.drop("encounter_fhir_id").cache()
-        measurements_out = measurements.cache()
+        person_out = omop["person"].drop("patient_fhir_id").cache()
+        visits_out = omop["visit_occurrence"].drop("encounter_fhir_id").cache()
+        measurements_out = omop["measurement"].cache()
 
         os.makedirs(OUT_DIR, exist_ok=True)
         write_csv(person_out.orderBy("person_id"), os.path.join(OUT_DIR, "person.csv"))
@@ -115,6 +109,31 @@ def main():
             f.write("\n")
         print(f"wrote {report_path}")
         print(f"DQ: {report['overall_result']} ({report['passed_checks']}/{report['total_checks']})")
+
+        # PCORnet: cache so the surrogate VITALID is identical across the CSV and the DQ run
+        pcornet_out = {name: df.cache() for name, df in pcornet.items()}
+        pcornet_dir = os.path.join(OUT_DIR, "pcornet")
+        os.makedirs(pcornet_dir, exist_ok=True)
+        sort_keys = {
+            "demographic": ["PATID"],
+            "encounter": ["ENCOUNTERID"],
+            "vital": ["PATID", "MEASURE_DATE", "MEASURE_TIME"],
+            "obs_clin": ["OBSCLINID"],
+        }
+        for name, df in pcornet_out.items():
+            write_csv(df.orderBy(*sort_keys[name]), os.path.join(pcornet_dir, f"{name}.csv"))
+
+        pcornet_report = run_all_pcornet_checks(
+            pcornet_out["demographic"], pcornet_out["encounter"], pcornet_out["vital"], pcornet_out["obs_clin"],
+            omop=(person_out, visits_out, measurements_out),
+        )
+        pcornet_report_path = os.path.join(pcornet_dir, "pcornet_data_quality_report.json")
+        with open(pcornet_report_path, "w", encoding="utf-8") as f:
+            json.dump(pcornet_report, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+        print(f"wrote {pcornet_report_path}")
+        print(f"PCORnet DQ: {pcornet_report['overall_result']} "
+              f"({pcornet_report['passed_checks']}/{pcornet_report['total_checks']})")
 
     spark.stop()
 

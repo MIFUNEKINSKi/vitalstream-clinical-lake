@@ -126,3 +126,36 @@ VISIT_CONCEPT_MAP = {
     "IMP": 9201,   # Inpatient Visit
     "EMER": 9203,  # Emergency Room Visit
 }
+
+# --- PCORnet CDM v6.1 value sets ---
+# PCORnet keeps short categorical codes (plus the RAW_ source value) instead of
+# mapping to standard concept_ids like OMOP.
+
+# FHIR gender → PCORnet DEMOGRAPHIC.SEX
+FHIR_GENDER_TO_PCORNET_SEX = {
+    "male": "M",
+    "female": "F",
+    "other": "OT",
+    "unknown": "UN",
+}
+
+# FHIR Encounter class → PCORnet ENCOUNTER.ENC_TYPE
+FHIR_CLASS_TO_PCORNET_ENC_TYPE = {
+    "AMB": "AV",     # Ambulatory Visit
+    "IMP": "IP",     # Inpatient Hospital Stay
+    "EMER": "ED",    # Emergency Department
+    "VR": "TH",      # Telehealth
+    "OBSENC": "OS",  # Observation Stay
+}
+
+# Permissible values from the PCORnet CDM v6.1 specification
+PCORNET_SEX_VALUES = frozenset({"A", "F", "M", "NI", "UN", "OT"})
+PCORNET_ENC_TYPE_VALUES = frozenset({"AV", "ED", "EI", "IP", "IS", "OS", "IC", "TH", "OA", "NI", "UN", "OT"})
+PCORNET_OBSCLIN_TYPE_VALUES = frozenset({"LC", "SM"})
+
+# LOINC codes that PCORnet stores as VITAL columns rather than OBS_CLIN rows.
+# Height, weight and BMI would also go here; the synthetic source has none.
+PCORNET_VITAL_LOINC = {
+    "8480-6": "SYSTOLIC",
+    "8462-4": "DIASTOLIC",
+}
