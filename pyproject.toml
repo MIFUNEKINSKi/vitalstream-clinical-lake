@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vitalstream"
 version = "1.0.0"
-description = "Healthcare data pipeline: HL7 FHIR R4 to OMOP CDM v5.4"
+description = "Healthcare data pipeline: HL7 FHIR R4 to OMOP CDM v5.4 and PCORnet CDM v6.1"
 requires-python = ">=3.10"
 
 dependencies = [
