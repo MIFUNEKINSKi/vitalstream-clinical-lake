@@ -23,6 +23,7 @@ resource "aws_glue_job" "fhir_to_omop_etl" {
   default_arguments = {
     "--source_path"                = "s3://${aws_s3_bucket.landing_zone.bucket}/raw/"
     "--target_path"                = "s3://${aws_s3_bucket.curated_zone.bucket}/omop"
+    "--pcornet_target_path"        = "s3://${aws_s3_bucket.curated_zone.bucket}/pcornet"
     "--extra-py-files"             = "s3://${aws_s3_bucket.glue_scripts.bucket}/${aws_s3_object.src_package.key}"
     "--enable-metrics"             = "true"
     "--enable-continuous-cloudwatch-log" = "true"
@@ -65,6 +66,10 @@ resource "aws_glue_crawler" "vitalstream_crawler" {
 
   s3_target {
     path = "s3://${aws_s3_bucket.curated_zone.bucket}/omop/"
+  }
+
+  s3_target {
+    path = "s3://${aws_s3_bucket.curated_zone.bucket}/pcornet/"
   }
 
   s3_target {

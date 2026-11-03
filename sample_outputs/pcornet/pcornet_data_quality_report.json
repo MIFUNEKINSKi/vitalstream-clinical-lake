@@ -1,0 +1,250 @@
+{
+  "run_timestamp": "2026-11-03T02:23:19.848449Z",
+  "overall_result": "PASS",
+  "total_checks": 31,
+  "passed_checks": 31,
+  "failed_checks": 0,
+  "checks": [
+    {
+      "check_type": "required_field",
+      "table": "DEMOGRAPHIC",
+      "column": "PATID",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "DEMOGRAPHIC",
+      "column": "BIRTH_DATE",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "DEMOGRAPHIC",
+      "column": "SEX",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "ENCOUNTER",
+      "column": "ENCOUNTERID",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "ENCOUNTER",
+      "column": "PATID",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "ENCOUNTER",
+      "column": "ADMIT_DATE",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "ENCOUNTER",
+      "column": "ENC_TYPE",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "VITAL",
+      "column": "VITALID",
+      "total_rows": 5,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "VITAL",
+      "column": "PATID",
+      "total_rows": 5,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "VITAL",
+      "column": "MEASURE_DATE",
+      "total_rows": 5,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "VITAL",
+      "column": "VITAL_SOURCE",
+      "total_rows": 5,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "OBS_CLIN",
+      "column": "OBSCLINID",
+      "total_rows": 9,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "OBS_CLIN",
+      "column": "PATID",
+      "total_rows": 9,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "OBS_CLIN",
+      "column": "OBSCLIN_START_DATE",
+      "total_rows": 9,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "OBS_CLIN",
+      "column": "OBSCLIN_TYPE",
+      "total_rows": 9,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "required_field",
+      "table": "OBS_CLIN",
+      "column": "OBSCLIN_CODE",
+      "total_rows": 9,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "value_set",
+      "table": "DEMOGRAPHIC",
+      "column": "SEX",
+      "value_set": "A,F,M,NI,OT,UN",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "value_set",
+      "table": "ENCOUNTER",
+      "column": "ENC_TYPE",
+      "value_set": "AV,ED,EI,IC,IP,IS,NI,OA,OS,OT,TH,UN",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "value_set",
+      "table": "OBS_CLIN",
+      "column": "OBSCLIN_TYPE",
+      "value_set": "LC,SM",
+      "total_rows": 9,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "primary_key",
+      "table": "DEMOGRAPHIC",
+      "column": "PATID",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "primary_key",
+      "table": "ENCOUNTER",
+      "column": "ENCOUNTERID",
+      "total_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "primary_key",
+      "table": "VITAL",
+      "column": "VITALID",
+      "total_rows": 5,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "primary_key",
+      "table": "OBS_CLIN",
+      "column": "OBSCLINID",
+      "total_rows": 9,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "referential_integrity",
+      "relationship": "ENCOUNTER.PATID → DEMOGRAPHIC.PATID",
+      "orphan_count": 0,
+      "passed": true
+    },
+    {
+      "check_type": "referential_integrity",
+      "relationship": "VITAL.PATID → DEMOGRAPHIC.PATID",
+      "orphan_count": 0,
+      "passed": true
+    },
+    {
+      "check_type": "referential_integrity",
+      "relationship": "OBS_CLIN.PATID → DEMOGRAPHIC.PATID",
+      "orphan_count": 0,
+      "passed": true
+    },
+    {
+      "check_type": "referential_integrity",
+      "relationship": "VITAL.ENCOUNTERID → ENCOUNTER.ENCOUNTERID",
+      "orphan_count": 0,
+      "passed": true
+    },
+    {
+      "check_type": "referential_integrity",
+      "relationship": "OBS_CLIN.ENCOUNTERID → ENCOUNTER.ENCOUNTERID",
+      "orphan_count": 0,
+      "passed": true
+    },
+    {
+      "check_type": "omop_pcornet_reconciliation",
+      "relationship": "person ↔ DEMOGRAPHIC",
+      "omop_rows": 3,
+      "pcornet_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "omop_pcornet_reconciliation",
+      "relationship": "visit_occurrence ↔ ENCOUNTER",
+      "omop_rows": 3,
+      "pcornet_rows": 3,
+      "violations": 0,
+      "passed": true
+    },
+    {
+      "check_type": "omop_pcornet_reconciliation",
+      "relationship": "measurement ↔ OBS_CLIN + VITAL(SYSTOLIC, DIASTOLIC)",
+      "omop_rows": 14,
+      "pcornet_rows": 14,
+      "violations": 0,
+      "passed": true
+    }
+  ]
+}
