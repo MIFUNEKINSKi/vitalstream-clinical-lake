@@ -57,9 +57,12 @@ data "archive_file" "src_package" {
       "glue_jobs/__init__.py",
       "glue_jobs/fhir_parser.py",
       "glue_jobs/omop_mapper.py",
+      "glue_jobs/pcornet_mapper.py",
+      "glue_jobs/pcornet_data_quality.py",
       "shared/__init__.py",
       "shared/constants.py",
       "shared/omop_schema.py",
+      "shared/pcornet_schema.py",
     ]
     content {
       content  = file("${path.module}/../src/${source.value}")

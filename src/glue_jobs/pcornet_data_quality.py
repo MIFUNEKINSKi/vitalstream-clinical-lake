@@ -13,12 +13,36 @@ from datetime import datetime, timezone
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, countDistinct, lit, when
 from pyspark.sql.functions import sum as spark_sum
+from pyspark.sql.types import (
+    BooleanType,
+    LongType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 from src.data_generator.vocabulary import (
     PCORNET_ENC_TYPE_VALUES,
     PCORNET_OBSCLIN_TYPE_VALUES,
     PCORNET_SEX_VALUES,
 )
+
+# Flattened one-row-per-check schema for the Athena pcornet_data_quality_report
+# table. Fields not applicable to a check type are null.
+PCORNET_DQ_REPORT_ROW_SCHEMA = StructType([
+    StructField("run_timestamp", StringType(), nullable=False),
+    StructField("check_type", StringType(), nullable=False),
+    StructField("table", StringType(), nullable=True),
+    StructField("column", StringType(), nullable=True),
+    StructField("value_set", StringType(), nullable=True),
+    StructField("relationship", StringType(), nullable=True),
+    StructField("total_rows", LongType(), nullable=True),
+    StructField("violations", LongType(), nullable=True),
+    StructField("orphan_count", LongType(), nullable=True),
+    StructField("omop_rows", LongType(), nullable=True),
+    StructField("pcornet_rows", LongType(), nullable=True),
+    StructField("passed", BooleanType(), nullable=False),
+])
 
 
 def run_required_field_checks(
@@ -246,3 +270,24 @@ def run_all_pcornet_checks(
         "failed_checks": sum(1 for c in all_checks if not c["passed"]),
         "checks": all_checks,
     }
+
+
+def flatten_pcornet_report(report: dict) -> list[dict]:
+    """Flatten the nested report to one dict per check, keyed to PCORNET_DQ_REPORT_ROW_SCHEMA."""
+    return [
+        {
+            "run_timestamp": report["run_timestamp"],
+            "check_type": check["check_type"],
+            "table": check.get("table"),
+            "column": check.get("column"),
+            "value_set": check.get("value_set"),
+            "relationship": check.get("relationship"),
+            "total_rows": check.get("total_rows"),
+            "violations": check.get("violations"),
+            "orphan_count": check.get("orphan_count"),
+            "omop_rows": check.get("omop_rows"),
+            "pcornet_rows": check.get("pcornet_rows"),
+            "passed": check["passed"],
+        }
+        for check in report["checks"]
+    ]

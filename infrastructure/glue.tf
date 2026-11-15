@@ -49,6 +49,7 @@ resource "aws_glue_job" "data_quality" {
 
   default_arguments = {
     "--target_path"                = "s3://${aws_s3_bucket.curated_zone.bucket}/omop"
+    "--pcornet_target_path"        = "s3://${aws_s3_bucket.curated_zone.bucket}/pcornet"
     "--dq_output_path"             = "s3://${aws_s3_bucket.curated_zone.bucket}/dq_reports"
     "--extra-py-files"             = "s3://${aws_s3_bucket.glue_scripts.bucket}/${aws_s3_object.src_package.key}"
     "--enable-metrics"             = "true"
@@ -74,6 +75,10 @@ resource "aws_glue_crawler" "vitalstream_crawler" {
 
   s3_target {
     path = "s3://${aws_s3_bucket.curated_zone.bucket}/dq_reports/data_quality_report/"
+  }
+
+  s3_target {
+    path = "s3://${aws_s3_bucket.curated_zone.bucket}/dq_reports/pcornet_data_quality_report/"
   }
 
   configuration = jsonencode({

@@ -29,6 +29,7 @@
         "JobName": "${dq_job_name}",
         "Arguments": {
           "--target_path": "${target_path}",
+          "--pcornet_target_path": "${pcornet_target_path}",
           "--dq_output_path": "${dq_output_path}"
         }
       },

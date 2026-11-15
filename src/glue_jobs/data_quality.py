@@ -229,7 +229,10 @@ def main():
     from awsglue.utils import getResolvedOptions
     from pyspark.context import SparkContext
 
-    args = getResolvedOptions(sys.argv, ["JOB_NAME", "target_path", "dq_output_path"])
+    required = ["JOB_NAME", "target_path", "dq_output_path"]
+    if "--pcornet_target_path" in sys.argv:
+        required.append("pcornet_target_path")
+    args = getResolvedOptions(sys.argv, required)
 
     sc = SparkContext()
     glue_context = GlueContext(sc)
@@ -251,6 +254,37 @@ def main():
     report_df = spark.createDataFrame(flatten_report(report), DQ_REPORT_ROW_SCHEMA)
     report_df.coalesce(1).write.mode("append").json(f"{dq_output_path}/data_quality_report/")
     print(f"Wrote {report['total_checks']} check rows to {dq_output_path}/data_quality_report/")
+
+    pcornet_target_path = args.get("pcornet_target_path")
+    if pcornet_target_path:
+        from src.glue_jobs.pcornet_data_quality import (
+            PCORNET_DQ_REPORT_ROW_SCHEMA,
+            flatten_pcornet_report,
+            run_all_pcornet_checks,
+        )
+
+        print(f"Reading PCORnet tables from {pcornet_target_path}")
+        demographic_df = spark.read.parquet(f"{pcornet_target_path}/demographic/")
+        encounter_df = spark.read.parquet(f"{pcornet_target_path}/encounter/")
+        vital_df = spark.read.parquet(f"{pcornet_target_path}/vital/")
+        obs_clin_df = spark.read.parquet(f"{pcornet_target_path}/obs_clin/")
+
+        pcornet_report = run_all_pcornet_checks(
+            demographic_df, encounter_df, vital_df, obs_clin_df,
+            omop=(person_df, visit_df, measurement_df),
+        )
+        print(json.dumps(pcornet_report, indent=2, ensure_ascii=False))
+
+        pcornet_report_df = spark.createDataFrame(
+            flatten_pcornet_report(pcornet_report), PCORNET_DQ_REPORT_ROW_SCHEMA
+        )
+        pcornet_report_df.coalesce(1).write.mode("append").json(
+            f"{dq_output_path}/pcornet_data_quality_report/"
+        )
+        print(
+            f"Wrote {pcornet_report['total_checks']} check rows to "
+            f"{dq_output_path}/pcornet_data_quality_report/"
+        )
 
     job.commit()
 
