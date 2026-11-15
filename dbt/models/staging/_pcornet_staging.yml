@@ -1,0 +1,88 @@
+version: 2
+
+# These tests mirror the pipeline's PCORnet DQ checks
+# (src/glue_jobs/pcornet_data_quality.py):
+#   required-field checks   -> not_null on the same columns
+#   primary-key checks      -> unique on the same keys
+#   referential integrity   -> relationships tests on the same foreign keys
+#   value-set conformance   -> tests/assert_pcornet_value_sets.sql
+#                              (driven by the pcornet_value_sets seed,
+#                              generated from vocabulary.py)
+#   OMOP reconciliation     -> tests/assert_omop_pcornet_reconciliation.sql
+
+models:
+  - name: stg_pcornet__demographic
+    description: Typed staging view over the PCORnet DEMOGRAPHIC table.
+    columns:
+      - name: patid
+        data_tests: [not_null, unique]
+      - name: sex
+        data_tests: [not_null]
+      - name: birth_date
+        data_tests: [not_null]
+
+  - name: stg_pcornet__encounter
+    description: Typed staging view over the PCORnet ENCOUNTER table.
+    columns:
+      - name: encounterid
+        data_tests: [not_null, unique]
+      - name: patid
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_pcornet__demographic')
+                field: patid
+      - name: admit_date
+        data_tests: [not_null]
+      - name: enc_type
+        data_tests: [not_null]
+
+  - name: stg_pcornet__vital
+    description: Typed staging view over the PCORnet VITAL table.
+    columns:
+      - name: vitalid
+        data_tests: [not_null, unique]
+      - name: patid
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_pcornet__demographic')
+                field: patid
+      - name: encounterid
+        description: Nullable FK — vitals may lack an encounter link.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_pcornet__encounter')
+                field: encounterid
+      - name: measure_date
+        data_tests: [not_null]
+      - name: vital_source
+        data_tests: [not_null]
+
+  - name: stg_pcornet__obs_clin
+    description: Typed staging view over the PCORnet OBS_CLIN table.
+    columns:
+      - name: obsclinid
+        data_tests: [not_null, unique]
+      - name: patid
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_pcornet__demographic')
+                field: patid
+      - name: encounterid
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_pcornet__encounter')
+                field: encounterid
+      - name: obsclin_start_date
+        data_tests: [not_null]
+      - name: obsclin_type
+        data_tests: [not_null]
+      - name: obsclin_code
+        data_tests: [not_null]

@@ -15,3 +15,19 @@ seeds:
         data_tests: [not_null, unique]
       - name: vital_sign
         data_tests: [not_null]
+
+  - name: pcornet_value_sets
+    description: >
+      Permissible values for coded PCORnet fields, generated from the
+      PCORNET_* value sets in src/data_generator/vocabulary.py by
+      scripts/generate_dbt_seed.py — do not edit by hand.
+    config:
+      column_types:
+        allowed_value: varchar
+    columns:
+      - name: table_name
+        data_tests: [not_null]
+      - name: column_name
+        data_tests: [not_null]
+      - name: allowed_value
+        data_tests: [not_null]

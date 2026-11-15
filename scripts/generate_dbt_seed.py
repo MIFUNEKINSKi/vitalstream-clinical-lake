@@ -1,11 +1,13 @@
-"""Generate dbt/seeds/vital_sign_reference.csv from vocabulary.py VITAL_SIGNS.
+"""Generate dbt seeds from vocabulary.py.
 
 Usage:
     python scripts/generate_dbt_seed.py
 
-Keeps src/data_generator/vocabulary.py the single source of truth for
-vital-sign concept_ids and thresholds: the dbt models and tests consume this
-seed rather than hardcoding their own copies.
+Writes vital_sign_reference.csv (from VITAL_SIGNS) and
+pcornet_value_sets.csv (from the PCORNET_* permissible-value sets).
+Keeps src/data_generator/vocabulary.py the single source of truth:
+the dbt models and tests consume these seeds rather than hardcoding
+their own copies.
 """
 
 import csv
@@ -15,9 +17,21 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO)
 
-from src.data_generator.vocabulary import VITAL_SIGNS  # noqa: E402
+from src.data_generator.vocabulary import (  # noqa: E402
+    PCORNET_ENC_TYPE_VALUES,
+    PCORNET_OBSCLIN_TYPE_VALUES,
+    PCORNET_SEX_VALUES,
+    VITAL_SIGNS,
+)
 
 OUT_PATH = os.path.join(REPO, "dbt", "seeds", "vital_sign_reference.csv")
+PCORNET_OUT_PATH = os.path.join(REPO, "dbt", "seeds", "pcornet_value_sets.csv")
+
+PCORNET_VALUE_SETS = [
+    ("demographic", "sex", PCORNET_SEX_VALUES),
+    ("encounter", "enc_type", PCORNET_ENC_TYPE_VALUES),
+    ("obs_clin", "obsclin_type", PCORNET_OBSCLIN_TYPE_VALUES),
+]
 
 COLUMNS = [
     "loinc_code",
@@ -54,6 +68,14 @@ def main():
                 fmt(vs.max_alert),
             ])
     print(f"wrote {OUT_PATH} ({len(VITAL_SIGNS)} vital signs)")
+
+    with open(PCORNET_OUT_PATH, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["table_name", "column_name", "allowed_value"])
+        for table_name, column_name, allowed in PCORNET_VALUE_SETS:
+            for value in sorted(allowed):
+                writer.writerow([table_name, column_name, value])
+    print(f"wrote {PCORNET_OUT_PATH} ({len(PCORNET_VALUE_SETS)} value sets)")
 
 
 if __name__ == "__main__":

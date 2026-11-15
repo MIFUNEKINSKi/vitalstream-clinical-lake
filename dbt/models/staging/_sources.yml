@@ -22,3 +22,28 @@ sources:
         description: OMOP measurement table — one row per vital-sign observation (FHIR Observation).
         meta:
           external_location: "read_csv_auto('../sample_outputs/measurement.csv')"
+
+  - name: pcornet
+    description: >
+      Curated PCORnet CDM v6.1 tables written as Parquet by the same Glue ETL
+      run that produces the OMOP tables. On the duckdb dev target, each
+      table's external_location points at the committed sample_outputs/pcornet
+      CSVs.
+    schema: "{{ 'vitalstream_db' if target.type == 'athena' else 'main' }}"
+    tables:
+      - name: demographic
+        description: PCORnet DEMOGRAPHIC — one row per patient.
+        meta:
+          external_location: "read_csv_auto('../sample_outputs/pcornet/demographic.csv')"
+      - name: encounter
+        description: PCORnet ENCOUNTER — one row per encounter.
+        meta:
+          external_location: "read_csv_auto('../sample_outputs/pcornet/encounter.csv')"
+      - name: vital
+        description: PCORnet VITAL — one row per blood-pressure measurement set.
+        meta:
+          external_location: "read_csv_auto('../sample_outputs/pcornet/vital.csv')"
+      - name: obs_clin
+        description: PCORnet OBS_CLIN — one row per non-BP clinical observation.
+        meta:
+          external_location: "read_csv_auto('../sample_outputs/pcornet/obs_clin.csv')"

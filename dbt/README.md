@@ -8,28 +8,35 @@ quality checks mirrored as dbt tests.
 
 ```
 sources (omop):        person · visit_occurrence · measurement
+sources (pcornet):     demographic · encounter · vital · obs_clin
                           │
 staging (views):       stg_omop__person · stg_omop__visit_occurrence · stg_omop__measurement
+                       stg_pcornet__demographic · stg_pcornet__encounter
+                       stg_pcornet__vital · stg_pcornet__obs_clin
                           │
-seed:                  vital_sign_reference  ──►  dim_vital_sign
+seeds:                 vital_sign_reference  ──►  dim_vital_sign
+                       pcornet_value_sets
                           │
 marts (tables):        patient_vital_summary
                        abnormal_vitals_by_encounter
                        daily_measurement_counts
 ```
 
-`vital_sign_reference` is generated from `src/data_generator/vocabulary.py`
-by `scripts/generate_dbt_seed.py` — vocabulary.py stays the single source of
-truth for LOINC/OMOP mappings, plausible ranges, and alert thresholds. Never
-edit the seed CSV by hand.
+Both seeds are generated from `src/data_generator/vocabulary.py` by
+`scripts/generate_dbt_seed.py` — vocabulary.py stays the single source of
+truth for LOINC/OMOP mappings, plausible ranges, alert thresholds, and the
+PCORnet permissible value sets. Never edit the seed CSVs by hand.
 
 ## DQ checks as dbt tests
 
-| PySpark check (`data_quality.py`) | dbt equivalent |
+| PySpark check (`data_quality.py` / `pcornet_data_quality.py`) | dbt equivalent |
 |---|---|
 | Null checks on critical columns | `not_null` tests in `models/staging/_staging.yml` |
 | Referential integrity (person / visit FKs) | `relationships` tests in `models/staging/_staging.yml` |
 | Clinically plausible ranges | `tests/assert_measurements_within_plausible_range.sql` (driven by `dim_vital_sign`) |
+| PCORnet required fields / primary keys / FKs | `not_null`, `unique`, `relationships` tests in `models/staging/_pcornet_staging.yml` |
+| PCORnet value-set conformance | `tests/assert_pcornet_value_sets.sql` (driven by the `pcornet_value_sets` seed) |
+| OMOP ↔ PCORnet row reconciliation | `tests/assert_omop_pcornet_reconciliation.sql` |
 
 ## Targets
 

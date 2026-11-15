@@ -53,7 +53,7 @@ flowchart LR
 | **Healthcare Data Standards** | FHIR R4 resource modeling, LOINC vital sign codes, OMOP CDM v5.4 table mapping with correct concept_ids, PCORnet CDM v6.1 tables with PCORnet value sets and RAW_ source fields |
 | **Pipeline Orchestration** | Step Functions state machine (event-driven ingestion) + Airflow DAG scheduling the dbt build and DQ tests, with a CI DAG-integrity check |
 | **Data Quality** | Null checks, clinically plausible range validation, referential integrity between OMOP tables; PCORnet required-field, value-set, primary-key and referential checks plus OMOP ↔ PCORnet row reconciliation |
-| **Analytics Engineering (dbt)** | `sources → staging → marts` over the OMOP tables with schema tests mirroring the pipeline DQ checks; dbt-duckdb locally/CI, dbt-athena against the deployed stack |
+| **Analytics Engineering (dbt)** | `sources → staging → marts` over the OMOP and PCORnet tables with schema tests mirroring the pipeline DQ checks — including a cross-CDM OMOP ↔ PCORnet reconciliation test; dbt-duckdb locally/CI, dbt-athena against the deployed stack |
 | **Infrastructure as Code** | Modular Terraform: S3, Lambda, Glue, Step Functions, IAM — all resources defined, no console clicks |
 | **Testing** | PySpark unit tests with local SparkSession, FHIR validation tests, domain-correctness assertions |
 
