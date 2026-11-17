@@ -51,7 +51,15 @@
         "Name": "${crawler_name}"
       },
       "ResultPath": "$.crawler_result",
-      "End": true,
+      "Next": "WaitForCrawler",
+      "Retry": [
+        {
+          "ErrorEquals": ["Glue.CrawlerRunningException"],
+          "IntervalSeconds": 60,
+          "MaxAttempts": 5,
+          "BackoffRate": 2
+        }
+      ],
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],
@@ -59,6 +67,61 @@
           "ResultPath": "$.error"
         }
       ]
+    },
+    "WaitForCrawler": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "GetCrawlerStatus"
+    },
+    "GetCrawlerStatus": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:glue:getCrawler",
+      "Parameters": {
+        "Name": "${crawler_name}"
+      },
+      "ResultSelector": {
+        "state.$": "$.Crawler.State",
+        "last_crawl_status.$": "$.Crawler.LastCrawl.Status"
+      },
+      "ResultPath": "$.crawler_status",
+      "Next": "CrawlerFinished",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "PipelineFailed",
+          "ResultPath": "$.error"
+        }
+      ]
+    },
+    "CrawlerFinished": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.crawler_status.state",
+          "StringEquals": "READY",
+          "Next": "CrawlerSucceeded"
+        }
+      ],
+      "Default": "WaitForCrawler"
+    },
+    "CrawlerSucceeded": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.crawler_status.last_crawl_status",
+          "StringEquals": "SUCCEEDED",
+          "Next": "PipelineSucceeded"
+        }
+      ],
+      "Default": "CatalogUpdateFailed"
+    },
+    "PipelineSucceeded": {
+      "Type": "Succeed"
+    },
+    "CatalogUpdateFailed": {
+      "Type": "Fail",
+      "Error": "CatalogUpdateFailed",
+      "Cause": "The Glue crawler finished without SUCCEEDED. Check the crawler's CloudWatch logs."
     },
     "PipelineFailed": {
       "Type": "Fail",

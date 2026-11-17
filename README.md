@@ -43,7 +43,7 @@ flowchart LR
 2. **Validate** incoming bundles via Lambda (structural FHIR R4 checks)
 3. **Transform** FHIR resources to OMOP CDM and PCORnet CDM tables in one PySpark job on AWS Glue
 4. **Quality check** output tables (null checks, range validation, referential integrity; PCORnet value-set conformance and OMOP ↔ PCORnet reconciliation)
-5. **Catalog** curated Parquet via Glue Crawler for SQL access through Athena
+5. **Catalog** curated Parquet via Glue Crawler for SQL access through Athena; the state machine polls the crawler and succeeds only once the crawl has finished with SUCCEEDED
 
 ## What This Demonstrates
 
