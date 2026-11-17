@@ -10,7 +10,8 @@
         "Arguments": {
           "--source_path.$": "States.Format('s3://{}/{}', $.source_bucket, $.source_key)",
           "--target_path": "${target_path}",
-          "--pcornet_target_path": "${pcornet_target_path}"
+          "--pcornet_target_path": "${pcornet_target_path}",
+          "--ingest_id.$": "States.Hash($.source_key, 'SHA-256')"
         }
       },
       "ResultPath": "$.etl_result",
@@ -31,7 +32,8 @@
         "Arguments": {
           "--target_path": "${target_path}",
           "--pcornet_target_path": "${pcornet_target_path}",
-          "--dq_output_path": "${dq_output_path}"
+          "--dq_output_path": "${dq_output_path}",
+          "--ingest_id.$": "States.Hash($.source_key, 'SHA-256')"
         }
       },
       "ResultPath": "$.dq_result",

@@ -42,6 +42,7 @@ PCORNET_DQ_REPORT_ROW_SCHEMA = StructType([
     StructField("omop_rows", LongType(), nullable=True),
     StructField("pcornet_rows", LongType(), nullable=True),
     StructField("passed", BooleanType(), nullable=False),
+    StructField("ingest_id", StringType(), nullable=True),
 ])
 
 

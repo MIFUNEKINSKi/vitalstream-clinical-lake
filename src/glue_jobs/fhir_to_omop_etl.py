@@ -8,6 +8,8 @@ Usage (Glue job arguments):
     --source_path           s3://landing-zone/raw/
     --target_path           s3://curated-zone/omop/
     --pcornet_target_path   s3://curated-zone/pcornet/   (optional; omit to write OMOP only)
+    --ingest_id             sha256 of the source key; each table is written to
+                            <table>/ingest_id=<id>/ (Step Functions passes it)
     --JOB_NAME              vitalstream_fhir_to_omop
 """
 
@@ -40,6 +42,7 @@ from src.shared.constants import (
     PERSON_TABLE,
     VISIT_OCCURRENCE_TABLE,
     VITAL_TABLE,
+    ingest_partition_path,
 )
 
 
@@ -90,7 +93,9 @@ def main():
     # getResolvedOptions fails on missing arguments, so only ask for the
     # optional PCORnet target when the job was given one.
     write_pcornet = "--pcornet_target_path" in sys.argv
-    arg_names = ["JOB_NAME", "source_path", "target_path"] + (["pcornet_target_path"] if write_pcornet else [])
+    arg_names = ["JOB_NAME", "source_path", "target_path", "ingest_id"] + (
+        ["pcornet_target_path"] if write_pcornet else []
+    )
     args = getResolvedOptions(sys.argv, arg_names)
 
     sc = SparkContext()
@@ -108,19 +113,28 @@ def main():
     tables = build_cdm_tables(spark, bundle_df, include_pcornet=write_pcornet)
     omop = tables["omop"]
 
-    # Write partitioned Parquet to curated zone
-    omop[PERSON_TABLE].drop("patient_fhir_id").write.mode("overwrite").parquet(f"{target_path}/person/")
-    omop[VISIT_OCCURRENCE_TABLE].drop("encounter_fhir_id").write.mode("overwrite").parquet(
-        f"{target_path}/visit_occurrence/"
-    )
-    omop[MEASUREMENT_TABLE].write.mode("overwrite").parquet(f"{target_path}/measurement/")
+    ingest_id = args["ingest_id"]
 
-    print(f"Wrote OMOP tables to {target_path}")
+    # Overwrite only this bundle's partition of each table: earlier bundles
+    # stay, and a re-upload of the same object replaces its own rows.
+    omop[PERSON_TABLE].drop("patient_fhir_id").write.mode("overwrite").parquet(
+        ingest_partition_path(target_path, PERSON_TABLE, ingest_id)
+    )
+    omop[VISIT_OCCURRENCE_TABLE].drop("encounter_fhir_id").write.mode("overwrite").parquet(
+        ingest_partition_path(target_path, VISIT_OCCURRENCE_TABLE, ingest_id)
+    )
+    omop[MEASUREMENT_TABLE].write.mode("overwrite").parquet(
+        ingest_partition_path(target_path, MEASUREMENT_TABLE, ingest_id)
+    )
+
+    print(f"Wrote OMOP tables to {target_path} (ingest_id={ingest_id})")
 
     if write_pcornet:
         pcornet_target_path = args["pcornet_target_path"]
         for table_name, df in tables["pcornet"].items():
-            df.write.mode("overwrite").parquet(f"{pcornet_target_path}/{table_name}/")
+            df.write.mode("overwrite").parquet(
+                ingest_partition_path(pcornet_target_path, table_name, ingest_id)
+            )
             print(f"  PCORnet {table_name.upper()}: {df.count()} rows")
         print(f"Wrote PCORnet tables to {pcornet_target_path}")
 

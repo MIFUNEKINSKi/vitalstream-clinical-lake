@@ -29,6 +29,7 @@ from pyspark.sql.types import (
 )
 
 from src.data_generator.vocabulary import VITAL_SIGNS
+from src.shared.constants import ingest_partition_path
 
 # Flattened one-row-per-check schema for the Athena data_quality_report table.
 # Fields not applicable to a check type are null.
@@ -45,6 +46,7 @@ DQ_REPORT_ROW_SCHEMA = StructType([
     StructField("violations", LongType(), nullable=True),
     StructField("orphan_count", LongType(), nullable=True),
     StructField("passed", BooleanType(), nullable=False),
+    StructField("ingest_id", StringType(), nullable=True),
 ])
 
 
@@ -229,7 +231,7 @@ def main():
     from awsglue.utils import getResolvedOptions
     from pyspark.context import SparkContext
 
-    required = ["JOB_NAME", "target_path", "dq_output_path"]
+    required = ["JOB_NAME", "target_path", "dq_output_path", "ingest_id"]
     if "--pcornet_target_path" in sys.argv:
         required.append("pcornet_target_path")
     args = getResolvedOptions(sys.argv, required)
@@ -242,11 +244,16 @@ def main():
 
     target_path = args["target_path"]
     dq_output_path = args["dq_output_path"]
+    ingest_id = args["ingest_id"]
 
-    print(f"Reading OMOP tables from {target_path}")
-    person_df = spark.read.parquet(f"{target_path}/person/")
-    visit_df = spark.read.parquet(f"{target_path}/visit_occurrence/")
-    measurement_df = spark.read.parquet(f"{target_path}/measurement/")
+    def read_partition(base_path: str, table: str) -> DataFrame:
+        # Only this run's bundle, so concurrent runs cannot mix into the checks.
+        return spark.read.parquet(ingest_partition_path(base_path, table, ingest_id))
+
+    print(f"Reading OMOP tables from {target_path} (ingest_id={ingest_id})")
+    person_df = read_partition(target_path, "person")
+    visit_df = read_partition(target_path, "visit_occurrence")
+    measurement_df = read_partition(target_path, "measurement")
 
     report = run_all_checks(person_df, visit_df, measurement_df)
     print(json.dumps(report, indent=2, ensure_ascii=False))
@@ -264,10 +271,10 @@ def main():
         )
 
         print(f"Reading PCORnet tables from {pcornet_target_path}")
-        demographic_df = spark.read.parquet(f"{pcornet_target_path}/demographic/")
-        encounter_df = spark.read.parquet(f"{pcornet_target_path}/encounter/")
-        vital_df = spark.read.parquet(f"{pcornet_target_path}/vital/")
-        obs_clin_df = spark.read.parquet(f"{pcornet_target_path}/obs_clin/")
+        demographic_df = read_partition(pcornet_target_path, "demographic")
+        encounter_df = read_partition(pcornet_target_path, "encounter")
+        vital_df = read_partition(pcornet_target_path, "vital")
+        obs_clin_df = read_partition(pcornet_target_path, "obs_clin")
 
         pcornet_report = run_all_pcornet_checks(
             demographic_df, encounter_df, vital_df, obs_clin_df,
@@ -280,6 +287,7 @@ def main():
         )
 
     for rows, schema, name in writes:
+        rows = [{**row, "ingest_id": ingest_id} for row in rows]
         spark.createDataFrame(rows, schema).coalesce(1).write.mode("append").json(
             f"{dq_output_path}/{name}/"
         )

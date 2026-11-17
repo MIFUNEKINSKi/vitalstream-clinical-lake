@@ -68,7 +68,8 @@ flowchart LR
 - **Single source of truth for clinical reference data:** `vocabulary.py` defines every vital sign's LOINC/OMOP mapping, plausible range, and alert threshold once; the generator, the DQ checks, and the dbt seed all derive from it.
 - **dbt with dual targets:** the same models run on dbt-duckdb over committed sample outputs (free, no AWS, runs in CI) and on dbt-athena against the Glue-cataloged curated zone.
 - **Two orchestrators, deliberately:** Step Functions owns event-driven ingestion (S3 upload → validate → ETL → DQ → crawler); Airflow owns the scheduled analytics build (seed → dbt run → dbt test → docs). Each tool where it is strongest.
-- **Production hardening:** A production version would add CloudWatch alarms, dead-letter handling, schema drift alerts, PHI controls, secrets management, and partitioned incremental loads.
+- **Production hardening:** A production version would add CloudWatch alarms, dead-letter handling, schema drift alerts, PHI controls, secrets management, small-file compaction of the ingest partitions, and a cross-bundle merge (see the next bullet).
+- **One partition per uploaded bundle:** each upload writes every curated table to `<table>/ingest_id=<sha256 of the S3 key>/`, overwriting only that partition. Earlier uploads stay, a re-upload replaces its own rows instead of duplicating them, concurrent runs never touch each other's folders, and the DQ job checks only its own run's partition. OMOP keys are a hash of the FHIR id, so partitions combine without key collisions. Known limits: a patient who appears in two bundles gets two `person` rows with the same id (the dbt `unique` tests catch that on Athena), and a reference to a patient in another bundle is dropped by the per-bundle joins. A full merge or snapshot rebuild would close both gaps.
 
 ## FHIR-to-OMOP Mapping
 
@@ -115,7 +116,7 @@ Not produced: `LAB_RESULT_CM` (the synthetic source has no lab results) and `VIT
 **Run it:**
 - `make test` — mapper, DQ and end-to-end tests for both models (local SparkSession, no AWS).
 - `make samples` — runs the same `build_cdm_tables` function the Glue job uses and writes `sample_outputs/pcornet/*.csv` plus `pcornet_data_quality_report.json` next to the OMOP samples.
-- Glue: the ETL job writes OMOP to `--target_path` and, when `--pcornet_target_path` is passed (set in `infrastructure/glue.tf`), PCORnet in the same run. Omit it to write OMOP only.
+- Glue: the ETL job writes OMOP to `--target_path` and, when `--pcornet_target_path` is passed (set in `infrastructure/glue.tf`), PCORnet in the same run. Omit it to write OMOP only. Both the ETL and DQ jobs take `--ingest_id` (Step Functions passes a SHA-256 of the source key), which names the partition they write and read.
 
 ## Quick Start
 

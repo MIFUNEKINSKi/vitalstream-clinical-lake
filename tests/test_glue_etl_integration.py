@@ -1,5 +1,8 @@
 """End-to-end integration tests: FHIR Bundle → OMOP CDM and PCORnet CDM tables."""
 
+import json
+
+from src.data_generator.fhir_templates import generate_clinical_bundle
 from src.glue_jobs.data_quality import run_all_checks
 from src.glue_jobs.fhir_parser import (
     extract_encounters,
@@ -13,6 +16,16 @@ from src.glue_jobs.omop_mapper import (
     map_to_visit_occurrence,
 )
 from src.glue_jobs.pcornet_data_quality import run_all_pcornet_checks
+from src.shared.constants import (
+    DEMOGRAPHIC_TABLE,
+    ENCOUNTER_TABLE,
+    MEASUREMENT_TABLE,
+    OBS_CLIN_TABLE,
+    PERSON_TABLE,
+    VISIT_OCCURRENCE_TABLE,
+    VITAL_TABLE,
+    ingest_partition_path,
+)
 
 
 def test_full_pipeline_fhir_to_omop(spark, sample_bundle_df):
@@ -96,3 +109,32 @@ def test_etl_can_skip_pcornet(spark, sample_bundle_df):
 
     assert "pcornet" not in tables
     assert set(tables["omop"]) == {"person", "visit_occurrence", "measurement"}
+
+
+def test_ingest_partition_path():
+    assert (
+        ingest_partition_path("s3://curated/omop/", "person", "ab12")
+        == "s3://curated/omop/person/ingest_id=ab12/"
+    )
+
+
+def test_partitions_from_separate_bundles_combine_and_pass_dq(spark, tmp_path):
+    """Two uploads land in two partitions; read together they must still pass DQ."""
+    runs = []
+    for i in range(2):
+        path = tmp_path / f"bundle_{i}.json"
+        path.write_text(json.dumps(generate_clinical_bundle(num_observations=6)))
+        runs.append(build_cdm_tables(spark, spark.read.option("multiline", "true").json(str(path))))
+
+    def combined(model, table):
+        return runs[0][model][table].unionByName(runs[1][model][table])
+
+    omop = (
+        combined("omop", PERSON_TABLE),
+        combined("omop", VISIT_OCCURRENCE_TABLE),
+        combined("omop", MEASUREMENT_TABLE),
+    )
+    pcornet = [combined("pcornet", t) for t in (DEMOGRAPHIC_TABLE, ENCOUNTER_TABLE, VITAL_TABLE, OBS_CLIN_TABLE)]
+
+    assert run_all_checks(*omop)["overall_result"] == "PASS"
+    assert run_all_pcornet_checks(*pcornet, omop=omop)["overall_result"] == "PASS"

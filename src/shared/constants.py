@@ -12,6 +12,18 @@ VISIT_OCCURRENCE_TABLE = "visit_occurrence"
 MEASUREMENT_TABLE = "measurement"
 OBSERVATION_TABLE = "observation"
 
+
+
+def ingest_partition_path(base_path: str, table: str, ingest_id: str) -> str:
+    """Curated-zone folder for one table's rows from one source bundle.
+
+    Each upload writes (and on a re-upload, overwrites) only its own partition,
+    so concurrent runs never touch each other's data and DQ can read exactly
+    the rows its own run produced.
+    """
+    return f"{base_path.rstrip('/')}/{table}/ingest_id={ingest_id}/"
+
+
 # OMOP type concept IDs
 MEASUREMENT_TYPE_CONCEPT_ID = 32817  # EHR
 VISIT_TYPE_CONCEPT_ID = 32817  # EHR
