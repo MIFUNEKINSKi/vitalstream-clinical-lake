@@ -1,8 +1,10 @@
 -- Mirrors the pipeline's OMOP ↔ PCORnet reconciliation checks
 -- (pcornet_data_quality.py run_reconciliation_checks): both CDMs come from
--- one FHIR parse, so row counts must agree. Every OMOP measurement lands in
--- PCORnet either as an OBS_CLIN row or as one populated SYSTOLIC/DIASTOLIC
--- value on a VITAL row. Rows returned = mismatches = test failure.
+-- one FHIR parse, so row counts must agree. Non-BP measurements are one
+-- OBS_CLIN row each; a BP measurement is one populated SYSTOLIC/DIASTOLIC
+-- value on a VITAL row unless it has no value or a same-code reading shares
+-- its patient, encounter and time (VITAL then collapses it, and this test
+-- flags the loss). Rows returned = mismatches = test failure.
 
 with counts as (
     select

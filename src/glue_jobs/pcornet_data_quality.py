@@ -204,8 +204,11 @@ def run_reconciliation_checks(
 ) -> list[dict]:
     """Cross-model reconciliation: both CDMs come from one parse, so counts must agree.
 
-    Every OMOP measurement row lands in PCORnet either as an OBS_CLIN row or as
-    one populated SYSTOLIC / DIASTOLIC value on a VITAL row.
+    Every non-blood-pressure OMOP measurement row is one OBS_CLIN row. A blood
+    pressure row is one populated SYSTOLIC / DIASTOLIC value on a VITAL row only
+    when it has a value and no other reading of the same code shares its
+    patient, encounter and time; otherwise VITAL collapses it. The PCORnet side
+    can therefore never exceed OMOP, and a mismatch means real loss in VITAL.
     """
     vital_values = vital_df.agg(
         (count(col("SYSTOLIC")) + count(col("DIASTOLIC"))).alias("n")

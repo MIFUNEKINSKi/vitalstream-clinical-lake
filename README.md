@@ -110,7 +110,7 @@ Not produced: `LAB_RESULT_CM` (the synthetic source has no lab results) and `VIT
 - **Keys.** PCORnet `PATID` / `ENCOUNTERID` / `OBSCLINID` are the FHIR logical ids; OMOP uses integer surrogate keys.
 - **Shape.** Blood pressure is one wide `VITAL` row in PCORnet but two `measurement` rows in OMOP.
 
-**PCORnet data-quality checks** (`pcornet_data_quality.py`, modeled on PCORnet data-curation checks): required fields not null; value-set conformance for `SEX`, `ENC_TYPE` and `OBSCLIN_TYPE`; primary-key uniqueness; referential integrity (every `ENCOUNTER` / `VITAL` / `OBS_CLIN` `PATID` exists in `DEMOGRAPHIC`, every `ENCOUNTERID` in `ENCOUNTER`); and OMOP ↔ PCORnet reconciliation — `person` = `DEMOGRAPHIC`, `visit_occurrence` = `ENCOUNTER`, and `measurement` rows = `OBS_CLIN` rows + populated `VITAL` `SYSTOLIC` / `DIASTOLIC` values.
+**PCORnet data-quality checks** (`pcornet_data_quality.py`, modeled on PCORnet data-curation checks): required fields not null; value-set conformance for `SEX`, `ENC_TYPE` and `OBSCLIN_TYPE`; primary-key uniqueness; referential integrity (every `ENCOUNTER` / `VITAL` / `OBS_CLIN` `PATID` exists in `DEMOGRAPHIC`, every `ENCOUNTERID` in `ENCOUNTER`); and OMOP ↔ PCORnet reconciliation — `person` = `DEMOGRAPHIC`, `visit_occurrence` = `ENCOUNTER`, and `measurement` rows = `OBS_CLIN` rows + populated `VITAL` `SYSTOLIC` / `DIASTOLIC` values. That identity holds when every blood-pressure reading has a value and no two same-code readings share a patient, encounter and time; otherwise `VITAL` collapses them and the check fails, flagging real loss.
 
 **Run it:**
 - `make test` — mapper, DQ and end-to-end tests for both models (local SparkSession, no AWS).

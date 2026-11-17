@@ -1,5 +1,7 @@
 """Tests for data quality checks on PCORnet tables and OMOP ↔ PCORnet reconciliation."""
 
+import copy
+import json
 from datetime import date
 
 from pyspark.sql.types import StructField, StructType
@@ -159,3 +161,53 @@ def test_reconciliation_detects_missing_encounter(spark, sample_bundle_df):
     assert not visit_check["passed"]
     assert visit_check["omop_rows"] == 1
     assert visit_check["pcornet_rows"] == 0
+
+
+def _bundle_df_with(spark, tmp_path, sample_bundle_dict, edit):
+    """Write an edited copy of the sample bundle and read it back as a DataFrame."""
+    bundle = copy.deepcopy(sample_bundle_dict)
+    edit(bundle)
+    path = tmp_path / "bundle.json"
+    path.write_text(json.dumps(bundle))
+    return spark.read.option("multiline", "true").json(str(path))
+
+
+def _measurement_recon(spark, bundle_df):
+    omop, pcornet = _build_both_models(spark, bundle_df)
+    checks = run_reconciliation_checks(*omop, *pcornet)
+    return next(c for c in checks if c["relationship"].startswith("measurement"))
+
+
+def test_reconciliation_flags_duplicate_bp_reading_collapsed_in_vital(
+    spark, tmp_path, sample_bundle_dict
+):
+    """Two systolic readings at the same time/encounter are two OMOP rows but one VITAL value."""
+
+    def add_second_systolic(bundle):
+        sbp = next(e for e in bundle["entry"] if e["resource"].get("id") == "obs-sbp-001")
+        dup = copy.deepcopy(sbp)
+        dup["resource"]["id"] = "obs-sbp-002"
+        dup["fullUrl"] = "urn:uuid:obs-sbp-002"
+        bundle["entry"].append(dup)
+
+    check = _measurement_recon(
+        spark, _bundle_df_with(spark, tmp_path, sample_bundle_dict, add_second_systolic)
+    )
+    assert not check["passed"]
+    assert check["omop_rows"] == 4
+    assert check["pcornet_rows"] == 3
+
+
+def test_reconciliation_flags_bp_reading_without_value(spark, tmp_path, sample_bundle_dict):
+    """A BP observation with no valueQuantity is an OMOP row but no populated VITAL value."""
+
+    def drop_diastolic_value(bundle):
+        dbp = next(e for e in bundle["entry"] if e["resource"].get("id") == "obs-dbp-001")
+        del dbp["resource"]["valueQuantity"]
+
+    check = _measurement_recon(
+        spark, _bundle_df_with(spark, tmp_path, sample_bundle_dict, drop_diastolic_value)
+    )
+    assert not check["passed"]
+    assert check["omop_rows"] == 3
+    assert check["pcornet_rows"] == 2
