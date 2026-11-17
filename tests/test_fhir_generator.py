@@ -94,3 +94,13 @@ def test_all_observations_reference_same_patient():
         r = entry["resource"]
         if r["resourceType"] == "Observation":
             assert r["subject"]["reference"] == f"Patient/{patient_id}"
+
+
+def test_observations_share_one_time_inside_the_encounter():
+    bundle = generate_clinical_bundle(num_observations=6)
+    resources = [e["resource"] for e in bundle["entry"]]
+    period = next(r for r in resources if r["resourceType"] == "Encounter")["period"]
+    times = {r["effectiveDateTime"] for r in resources if r["resourceType"] == "Observation"}
+
+    assert len(times) == 1
+    assert period["start"] <= times.pop() <= period["end"]

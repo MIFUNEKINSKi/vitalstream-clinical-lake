@@ -163,8 +163,14 @@ def generate_clinical_bundle(num_observations: Optional[int] = None) -> dict:
         VITAL_SIGNS, min(num_observations, len(VITAL_SIGNS))
     )
 
+    # One vitals set taken at a single moment inside the encounter, so systolic
+    # and diastolic share a time and map to one wide PCORnet VITAL row.
+    start = datetime.fromisoformat(encounter["period"]["start"])
+    end = datetime.fromisoformat(encounter["period"]["end"])
+    taken_at = fake.date_time_between(start_date=start, end_date=end)
+
     observations = [
-        create_observation(patient["id"], encounter["id"], vs)
+        create_observation(patient["id"], encounter["id"], vs, taken_at)
         for vs in selected_vitals
     ]
 

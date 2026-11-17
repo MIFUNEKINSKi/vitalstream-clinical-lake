@@ -1,5 +1,5 @@
 {
-  "run_timestamp": "2026-11-03T02:23:19.848449Z",
+  "run_timestamp": "2026-11-17T22:39:10.473173Z",
   "overall_result": "PASS",
   "total_checks": 31,
   "passed_checks": 31,
@@ -65,7 +65,7 @@
       "check_type": "required_field",
       "table": "VITAL",
       "column": "VITALID",
-      "total_rows": 5,
+      "total_rows": 3,
       "violations": 0,
       "passed": true
     },
@@ -73,7 +73,7 @@
       "check_type": "required_field",
       "table": "VITAL",
       "column": "PATID",
-      "total_rows": 5,
+      "total_rows": 3,
       "violations": 0,
       "passed": true
     },
@@ -81,7 +81,7 @@
       "check_type": "required_field",
       "table": "VITAL",
       "column": "MEASURE_DATE",
-      "total_rows": 5,
+      "total_rows": 3,
       "violations": 0,
       "passed": true
     },
@@ -89,7 +89,7 @@
       "check_type": "required_field",
       "table": "VITAL",
       "column": "VITAL_SOURCE",
-      "total_rows": 5,
+      "total_rows": 3,
       "violations": 0,
       "passed": true
     },
@@ -180,7 +180,7 @@
       "check_type": "primary_key",
       "table": "VITAL",
       "column": "VITALID",
-      "total_rows": 5,
+      "total_rows": 3,
       "violations": 0,
       "passed": true
     },
