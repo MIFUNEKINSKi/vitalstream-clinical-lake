@@ -1,16 +1,30 @@
 # --- Validation Lambda ---
 
+# Keep the src/validation_lambda/ package path inside the zip: the handler
+# imports src.validation_lambda.fhir_validator, which a flat zip would break.
 data "archive_file" "validation_lambda_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/../src/validation_lambda"
-  output_path = "${path.module}/validation_lambda.zip"
+  output_path = "${path.module}/build/validation_lambda.zip"
+
+  dynamic "source" {
+    for_each = [
+      "__init__.py",
+      "validation_lambda/__init__.py",
+      "validation_lambda/fhir_validator.py",
+      "validation_lambda/lambda_function.py",
+    ]
+    content {
+      content  = file("${path.module}/../src/${source.value}")
+      filename = "src/${source.value}"
+    }
+  }
 }
 
 resource "aws_lambda_function" "validation_lambda" {
   filename         = data.archive_file.validation_lambda_zip.output_path
   function_name    = "${var.project_name}_validation"
   role             = aws_iam_role.lambda_role.arn
-  handler          = "lambda_function.lambda_handler"
+  handler          = "src.validation_lambda.lambda_function.lambda_handler"
   runtime          = "python3.12"
   timeout          = 30
   memory_size      = 128
