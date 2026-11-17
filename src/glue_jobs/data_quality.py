@@ -251,9 +251,9 @@ def main():
     report = run_all_checks(person_df, visit_df, measurement_df)
     print(json.dumps(report, indent=2, ensure_ascii=False))
 
-    report_df = spark.createDataFrame(flatten_report(report), DQ_REPORT_ROW_SCHEMA)
-    report_df.coalesce(1).write.mode("append").json(f"{dq_output_path}/data_quality_report/")
-    print(f"Wrote {report['total_checks']} check rows to {dq_output_path}/data_quality_report/")
+    # Both reports are appended only after every check has run, so a retry
+    # after a PCORnet failure does not append a second OMOP report.
+    writes = [(flatten_report(report), DQ_REPORT_ROW_SCHEMA, "data_quality_report")]
 
     pcornet_target_path = args.get("pcornet_target_path")
     if pcornet_target_path:
@@ -274,17 +274,16 @@ def main():
             omop=(person_df, visit_df, measurement_df),
         )
         print(json.dumps(pcornet_report, indent=2, ensure_ascii=False))
+        writes.append(
+            (flatten_pcornet_report(pcornet_report), PCORNET_DQ_REPORT_ROW_SCHEMA,
+             "pcornet_data_quality_report")
+        )
 
-        pcornet_report_df = spark.createDataFrame(
-            flatten_pcornet_report(pcornet_report), PCORNET_DQ_REPORT_ROW_SCHEMA
+    for rows, schema, name in writes:
+        spark.createDataFrame(rows, schema).coalesce(1).write.mode("append").json(
+            f"{dq_output_path}/{name}/"
         )
-        pcornet_report_df.coalesce(1).write.mode("append").json(
-            f"{dq_output_path}/pcornet_data_quality_report/"
-        )
-        print(
-            f"Wrote {pcornet_report['total_checks']} check rows to "
-            f"{dq_output_path}/pcornet_data_quality_report/"
-        )
+        print(f"Wrote {len(rows)} check rows to {dq_output_path}/{name}/")
 
     job.commit()
 
