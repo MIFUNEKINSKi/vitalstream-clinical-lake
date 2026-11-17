@@ -1,5 +1,8 @@
 """Tests for OMOP CDM mapper — verifies correct concept_id resolution and schema."""
 
+import json
+
+from src.data_generator.fhir_templates import generate_clinical_bundle
 from src.glue_jobs.fhir_parser import (
     extract_encounters,
     extract_observations,
@@ -119,3 +122,34 @@ def test_map_to_measurement_person_id_resolved(spark, sample_bundle_df):
     person_ids = {row.person_id for row in person.collect()}
     for row in measurements.collect():
         assert row.person_id in person_ids
+
+
+def _omop_keys(spark, bundle_df):
+    person = map_to_person(spark, extract_patients(bundle_df))
+    visits = map_to_visit_occurrence(spark, extract_encounters(bundle_df), person)
+    measurements = map_to_measurement(spark, extract_observations(bundle_df), person, visits)
+    return (
+        sorted(r.person_id for r in person.collect()),
+        sorted(r.visit_occurrence_id for r in visits.collect()),
+        sorted(r.measurement_id for r in measurements.collect()),
+    )
+
+
+def test_surrogate_keys_are_stable_across_runs(spark, sample_bundle_df):
+    first_run = _omop_keys(spark, sample_bundle_df)
+    second_run = _omop_keys(spark, sample_bundle_df)
+
+    assert first_run == second_run
+    assert all(key >= 0 for keys in first_run for key in keys)
+
+
+def test_surrogate_keys_unique_across_separate_bundles(spark, tmp_path):
+    keys = []
+    for i in range(2):
+        path = tmp_path / f"bundle_{i}.json"
+        path.write_text(json.dumps(generate_clinical_bundle(num_observations=6)))
+        keys.append(_omop_keys(spark, spark.read.option("multiline", "true").json(str(path))))
+
+    for table_keys in zip(*keys):
+        combined = table_keys[0] + table_keys[1]
+        assert len(combined) == len(set(combined))

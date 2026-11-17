@@ -1,5 +1,5 @@
 {
-  "run_timestamp": "2026-11-17T22:39:10.473173Z",
+  "run_timestamp": "2026-11-17T22:59:20.126043Z",
   "overall_result": "PASS",
   "total_checks": 31,
   "passed_checks": 31,
@@ -155,7 +155,7 @@
       "check_type": "value_set",
       "table": "OBS_CLIN",
       "column": "OBSCLIN_TYPE",
-      "value_set": "LC,SM",
+      "value_set": "LC,NI,OT,SM,UN",
       "total_rows": 9,
       "violations": 0,
       "passed": true

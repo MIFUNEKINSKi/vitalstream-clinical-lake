@@ -2,7 +2,7 @@
 
 Each function takes parsed FHIR DataFrames and returns a DataFrame conforming
 to the OMOP schema defined in src.shared.omop_schema. Uses native Spark operations:
-broadcast joins for vocabulary lookups, monotonically_increasing_id for surrogate keys.
+broadcast joins for vocabulary lookups, sha256-derived stable surrogate keys.
 """
 
 from pyspark.sql import DataFrame, SparkSession
@@ -10,10 +10,13 @@ from pyspark.sql.functions import (
     broadcast,
     coalesce,
     col,
+    concat_ws,
+    conv,
     lit,
-    monotonically_increasing_id,
     regexp_replace,
+    sha2,
     split,
+    substring,
     to_date,
     to_timestamp,
 )
@@ -25,6 +28,18 @@ from src.data_generator.vocabulary import (
     VISIT_CONCEPT_MAP,
 )
 from src.shared.constants import MEASUREMENT_TYPE_CONCEPT_ID, VISIT_TYPE_CONCEPT_ID
+
+
+def stable_key(resource_type: str, fhir_id_col: str):
+    """Deterministic non-negative BIGINT surrogate key from a FHIR logical id.
+
+    First 60 bits of sha256("<resourceType>/<id>"): the same resource gets the
+    same key in every run, so tables built from separate bundles can be
+    combined without key collisions (a 60-bit collision needs ~10^9 rows to
+    become likely). No UDF, so Spark keeps the expression in the JVM.
+    """
+    hashed = sha2(concat_ws("/", lit(resource_type), col(fhir_id_col)), 256)
+    return conv(substring(hashed, 1, 15), 16, 10).cast(LongType())
 
 
 def _build_lookup_df(spark: SparkSession, mapping: dict, key_col: str, val_col: str) -> DataFrame:
@@ -43,7 +58,7 @@ def map_to_person(spark: SparkSession, patients_df: DataFrame) -> DataFrame:
 
     return (
         patients_df
-        .withColumn("person_id", monotonically_increasing_id())
+        .withColumn("person_id", stable_key("Patient", "patient_fhir_id"))
         .join(broadcast(gender_lookup), on="gender", how="left")
         .select(
             col("person_id").cast(LongType()),
@@ -86,7 +101,7 @@ def map_to_visit_occurrence(
         encounters_with_pid
         .join(broadcast(person_lookup), on="patient_fhir_id", how="inner")
         .join(broadcast(visit_lookup), on="class_code", how="left")
-        .withColumn("visit_occurrence_id", monotonically_increasing_id())
+        .withColumn("visit_occurrence_id", stable_key("Encounter", "encounter_fhir_id"))
         .select(
             col("visit_occurrence_id").cast(LongType()),
             col("person_id").cast(LongType()),
@@ -136,7 +151,7 @@ def map_to_measurement(
             how="left",
         )
         .join(broadcast(loinc_lookup), on="loinc_code", how="left")
-        .withColumn("measurement_id", monotonically_increasing_id())
+        .withColumn("measurement_id", stable_key("Observation", "observation_fhir_id"))
         .select(
             col("measurement_id").cast(LongType()),
             col("person_id").cast(LongType()),

@@ -13,11 +13,13 @@ from pyspark.sql.functions import (
     broadcast,
     coalesce,
     col,
+    concat_ws,
     date_format,
     first,
     lit,
-    monotonically_increasing_id,
     regexp_replace,
+    sha2,
+    substring,
     to_date,
     to_timestamp,
     when,
@@ -173,7 +175,16 @@ def map_to_vital(
             component(loinc_for["SYSTOLIC"], col("value")).alias("systolic"),
             component(loinc_for["DIASTOLIC"], col("value")).alias("diastolic"),
         )
-        .withColumn("VITALID", monotonically_increasing_id().cast(StringType()))
+        # A VITAL row merges several observations, so its id hashes the group
+        # key (patient, encounter, time) rather than any one observation id.
+        .withColumn(
+            "VITALID",
+            substring(
+                sha2(concat_ws("|", col("PATID"), coalesce(col("ENCOUNTERID"), lit("")),
+                               col("effective_datetime").cast(StringType())), 256),
+                1, 32,
+            ),
+        )
         .select(
             col("VITALID"),
             col("PATID"),
