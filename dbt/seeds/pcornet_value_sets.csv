@@ -18,4 +18,7 @@ encounter,enc_type,OT
 encounter,enc_type,TH
 encounter,enc_type,UN
 obs_clin,obsclin_type,LC
+obs_clin,obsclin_type,NI
+obs_clin,obsclin_type,OT
 obs_clin,obsclin_type,SM
+obs_clin,obsclin_type,UN

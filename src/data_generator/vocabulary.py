@@ -151,7 +151,9 @@ FHIR_CLASS_TO_PCORNET_ENC_TYPE = {
 # Permissible values from the PCORnet CDM v6.1 specification
 PCORNET_SEX_VALUES = frozenset({"A", "F", "M", "NI", "UN", "OT"})
 PCORNET_ENC_TYPE_VALUES = frozenset({"AV", "ED", "EI", "IP", "IS", "OS", "IC", "TH", "OA", "NI", "UN", "OT"})
-PCORNET_OBSCLIN_TYPE_VALUES = frozenset({"LC", "SM"})
+# NI/UN/OT are PCORnet's null flavors on every coded field (confirmed for the
+# OBS_CLIN code list in v4.1; not yet checked against the v6.1 document).
+PCORNET_OBSCLIN_TYPE_VALUES = frozenset({"LC", "SM", "NI", "UN", "OT"})
 
 # LOINC codes that PCORnet stores as VITAL columns rather than OBS_CLIN rows.
 # Height, weight and BMI would also go here; the synthetic source has none.
