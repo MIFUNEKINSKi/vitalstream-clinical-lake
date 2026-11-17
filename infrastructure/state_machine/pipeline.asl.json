@@ -9,7 +9,8 @@
         "JobName": "${etl_job_name}",
         "Arguments": {
           "--source_path.$": "States.Format('s3://{}/{}', $.source_bucket, $.source_key)",
-          "--target_path": "${target_path}"
+          "--target_path": "${target_path}",
+          "--pcornet_target_path": "${pcornet_target_path}"
         }
       },
       "ResultPath": "$.etl_result",

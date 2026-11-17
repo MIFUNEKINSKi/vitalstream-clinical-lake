@@ -65,12 +65,22 @@ resource "aws_glue_crawler" "vitalstream_crawler" {
   name          = "${var.project_name}_crawler"
   role          = aws_iam_role.glue_role.arn
 
-  s3_target {
-    path = "s3://${aws_s3_bucket.curated_zone.bucket}/omop/"
-  }
-
-  s3_target {
-    path = "s3://${aws_s3_bucket.curated_zone.bucket}/pcornet/"
+  # One target per table folder: with CombineCompatibleSchemas a parent target
+  # (omop/, pcornet/) collapses into a single partitioned table instead of the
+  # per-table names Athena queries and the dbt athena target expect.
+  dynamic "s3_target" {
+    for_each = [
+      "omop/person/",
+      "omop/visit_occurrence/",
+      "omop/measurement/",
+      "pcornet/demographic/",
+      "pcornet/encounter/",
+      "pcornet/vital/",
+      "pcornet/obs_clin/",
+    ]
+    content {
+      path = "s3://${aws_s3_bucket.curated_zone.bucket}/${s3_target.value}"
+    }
   }
 
   s3_target {
